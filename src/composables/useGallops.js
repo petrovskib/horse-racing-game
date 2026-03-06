@@ -1,11 +1,5 @@
 import { ref, onUnmounted } from 'vue'
 
-/**
- * useGallop composable
- * Manages the galloping emoji animation for a single horse.
- * Alternates between 🐎 and 🐴 at a set interval.
- * Auto cleans up on component unmount.
- */
 export function useGallop(intervalMs = 180) {
   const emojiFrame = ref('🐴')
   const intervalId = ref(null)

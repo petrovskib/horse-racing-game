@@ -77,11 +77,6 @@ export default {
     currentHorses() {
       return this.$store.getters['race/currentHorses']
     },
-    /*
-      This is the key — pre-calculated result from the store.
-      Contains speed for each horse calculated ONCE in race.js.
-      Animation uses these speeds so visual order matches results.
-    */
     currentRoundResult() {
       return this.$store.getters['race/currentRoundResult']
     },
@@ -112,7 +107,6 @@ export default {
         }, 1500)
       }
 
-      // New round — reset horses to start line
       this.resetProgress(this.currentHorses)
       this.prepareRound(this.currentRoundResult)
       setTimeout(() => {
@@ -122,11 +116,8 @@ export default {
 
     isRacing(val) {
       if (!val) {
-        // Paused — freeze animation, saves elapsed time internally
         this.stopAnimation()
       } else {
-        // Resumed — continue from where we left off
-        // DO NOT call resetProgress here — horses keep their position
         this.prepareRound(this.currentRoundResult)
         this.startAnimation()
       }

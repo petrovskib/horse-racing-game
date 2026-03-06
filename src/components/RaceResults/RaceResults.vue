@@ -69,7 +69,6 @@ export default {
       return this.$store.getters['race/currentRound']
     },
 
-    // True if at least one round has finished
     hasResults() {
       return Object.keys(this.results).length > 0
     },

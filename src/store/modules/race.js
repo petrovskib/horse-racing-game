@@ -81,7 +81,6 @@ const actions = {
 
   toggleRace({ commit, state, dispatch }) {
     if (state.isRacing) {
-      // Save when we paused so resume knows where to continue
       commit('SET_ELAPSED_ON_PAUSE', Date.now())
       commit('SET_IS_RACING', false)
       commit('SET_IS_PAUSED', true)
@@ -133,7 +132,6 @@ const actions = {
   runSingleRound({ commit, state }, { roundIndex, roundResult, startedAt }) {
     return new Promise((resolve) => {
       const interval = 100
-      // If resuming, subtract already-elapsed time from total duration
       const remaining = RACE_DURATION_MS - (startedAt ? Date.now() - startedAt : 0)
       const totalTicks = Math.max(Math.ceil(remaining / interval), 1)
       let ticks = 0

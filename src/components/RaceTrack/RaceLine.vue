@@ -38,12 +38,10 @@ export default {
   setup(props) {
     const { emojiFrame, startGallop, stopGallop } = useGallop()
 
-    // Fix: if already racing when component mounts, start immediately
     onMounted(() => {
       if (props.isRunning) startGallop()
     })
 
-    // React to isRunning changes from parent
     watch(
       () => props.isRunning,
       (val) => {
@@ -57,7 +55,7 @@ export default {
   computed: {
     horseStyle() {
       // progress 0→1 mapped to 0%→88% of track width
-      return { left: `${this.progress * 88}%` }
+      return { left: `${this.progress * 99}%` }
     },
   },
 }
