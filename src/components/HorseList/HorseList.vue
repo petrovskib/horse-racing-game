@@ -58,6 +58,17 @@ export default {
   overflow: hidden;
 }
 
+/* On tablet/mobile — full width */
+@media (max-width: 768px) {
+  .horse-list {
+    width: 100%;
+  }
+
+  .horse-list__body {
+    max-height: 200px; /* collapsed height on mobile */
+  }
+}
+
 .horse-list__header {
   background-color: #e8a838;
   padding: 8px 12px;

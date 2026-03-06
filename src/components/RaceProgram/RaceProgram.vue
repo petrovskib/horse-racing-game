@@ -1,6 +1,5 @@
 <template>
   <div class="race-program">
-
     <!-- Header -->
     <div class="race-program__header">
       <h2>Program</h2>
@@ -19,7 +18,6 @@
         class="race-program__round"
         :class="{ 'race-program__round--active': round.round === currentRound }"
       >
-
         <!-- Round title row -->
         <div class="race-program__round-header">
           <span>{{ ordinal(round.round) }} Lap — {{ round.distance }}m</span>
@@ -34,10 +32,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(horse, index) in round.horses"
-              :key="horse.id"
-            >
+            <tr v-for="(horse, index) in round.horses" :key="horse.id">
               <td>{{ index + 1 }}</td>
               <td>
                 <!--  Color dot + name -->
@@ -50,10 +45,8 @@
             </tr>
           </tbody>
         </table>
-
       </div>
     </div>
-
   </div>
 </template>
 
@@ -69,20 +62,19 @@ export default {
     },
     currentRound() {
       return this.$store.getters['race/currentRound']
-    }
+    },
   },
 
   methods: {
     ordinal(n) {
       return toOrdinal(n)
-    }
-  }
+    },
+  },
 }
 </script>
 
 <style scoped>
 .race-program {
-  width: 220px;
   flex-shrink: 0;
   background: white;
   border: 1px solid #ddd;
@@ -174,7 +166,23 @@ export default {
   height: 8px;
   border-radius: 50%;
   margin-right: 5px;
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   vertical-align: middle;
+}
+
+/* Fixed width on desktop, full width on mobile */
+@media (max-width: 768px) {
+  .race-program {
+    /* or .race-results */
+    width: 100%;
+  }
+}
+
+/* Side by side on tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .race-program {
+    /* or .race-results */
+    width: calc(50% - 5px);
+  }
 }
 </style>

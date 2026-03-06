@@ -69,7 +69,6 @@ export default {
       return this.$store.getters['race/currentRound']
     },
 
-    // True if at least one round has finished
     hasResults() {
       return Object.keys(this.results).length > 0
     },
@@ -85,7 +84,6 @@ export default {
 
 <style scoped>
 .race-results {
-  width: 220px;
   flex-shrink: 0;
   background: white;
   border: 1px solid #ddd;
@@ -175,5 +173,21 @@ export default {
   margin-right: 5px;
   border: 1px solid rgba(0, 0, 0, 0.15);
   vertical-align: middle;
+}
+
+/* Fixed width on desktop, full width on mobile */
+@media (max-width: 768px) {
+  .race-program {
+    /* or .race-results */
+    width: 100%;
+  }
+}
+
+/* Side by side on tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .race-program {
+    /* or .race-results */
+    width: calc(50% - 5px);
+  }
 }
 </style>

@@ -1,6 +1,8 @@
 import { TOTAL_ROUNDS, ROUND_DISTANCES, RACE_DURATION_MS } from '../../constants/raceConfig'
 import { selectRandomHorses, calculateRaceResult } from '../../utils/horseUtils'
 
+const TICK_MS = 100
+
 const state = () => ({
   schedule: [],
   results: {},
@@ -10,6 +12,7 @@ const state = () => ({
   isPaused: false,
   currentRoundResult: [],
   elapsedOnPause: 0,
+  ticksElapsed: 0,
 })
 
 const getters = {
@@ -27,6 +30,7 @@ const getters = {
     const index = state.currentRound === 0 ? 0 : state.currentRound - 1
     return state.schedule[index].horses
   },
+  ticksElapsed: (state) => state.ticksElapsed,
 }
 
 const mutations = {
@@ -60,9 +64,13 @@ const mutations = {
     state.isGenerated = false
     state.currentRoundResult = []
     state.elapsedOnPause = 0
+    state.ticksElapsed = 0
   },
   SET_ELAPSED_ON_PAUSE(state, value) {
     state.elapsedOnPause = value
+  },
+  SET_TICKS_ELAPSED(state, value) {
+    state.ticksElapsed = value
   },
 }
 
@@ -81,12 +89,13 @@ const actions = {
 
   toggleRace({ commit, state, dispatch }) {
     if (state.isRacing) {
-      // Save when we paused so resume knows where to continue
-      commit('SET_ELAPSED_ON_PAUSE', Date.now())
+      // Pause — keep isPaused true so runAllRounds knows it's a resume
       commit('SET_IS_RACING', false)
       commit('SET_IS_PAUSED', true)
     } else {
-      commit('SET_IS_PAUSED', false)
+      // Resume or fresh start
+      // NOTE: we do NOT clear isPaused here
+      // runAllRounds reads it first, then clears it itself
       dispatch('runAllRounds')
     }
   },
@@ -94,7 +103,9 @@ const actions = {
   async runAllRounds({ commit, state, dispatch }) {
     commit('SET_IS_RACING', true)
 
-    // Find first round without a result
+    const isResuming = state.isPaused
+    commit('SET_IS_PAUSED', false)
+
     const startFrom =
       Array.from({ length: TOTAL_ROUNDS }, (_, i) => i).find((i) => !state.results[i + 1]) ??
       TOTAL_ROUNDS
@@ -104,21 +115,18 @@ const actions = {
 
       commit('SET_CURRENT_ROUND', i + 1)
 
-      const horses = state.schedule[i].horses
-      const roundResult = calculateRaceResult(horses)
+      const shouldReuse = isResuming && i === startFrom
 
-      commit('SET_CURRENT_ROUND_RESULT', roundResult)
-
-      // Pass when this round started so runSingleRound
-      // knows how much time remains if this is a resume
-      const startedAt = state.isPaused
-        ? Date.now() - (Date.now() - state.elapsedOnPause)
-        : Date.now()
+      if (!shouldReuse) {
+        const horses = state.schedule[i].horses
+        const roundResult = calculateRaceResult(horses)
+        commit('SET_CURRENT_ROUND_RESULT', roundResult)
+        commit('SET_TICKS_ELAPSED', 0)
+      }
 
       const completed = await dispatch('runSingleRound', {
         roundIndex: i,
-        roundResult,
-        startedAt,
+        roundResult: state.currentRoundResult,
       })
 
       if (!completed) break
@@ -130,16 +138,17 @@ const actions = {
     }
   },
 
-  runSingleRound({ commit, state }, { roundIndex, roundResult, startedAt }) {
+  runSingleRound({ commit, state }, { roundIndex, roundResult }) {
     return new Promise((resolve) => {
-      const interval = 100
-      // If resuming, subtract already-elapsed time from total duration
-      const remaining = RACE_DURATION_MS - (startedAt ? Date.now() - startedAt : 0)
-      const totalTicks = Math.max(Math.ceil(remaining / interval), 1)
-      let ticks = 0
+      const totalTicks = RACE_DURATION_MS / TICK_MS
+
+      // Resume from where we left off — not from zero
+      let ticks = state.ticksElapsed
 
       const timer = setInterval(() => {
         if (!state.isRacing) {
+          // Save progress before stopping
+          commit('SET_TICKS_ELAPSED', ticks)
           clearInterval(timer)
           resolve(false)
           return
@@ -149,13 +158,15 @@ const actions = {
 
         if (ticks >= totalTicks) {
           clearInterval(timer)
+          // Reset ticks for next round
+          commit('SET_TICKS_ELAPSED', 0)
           commit('SET_RESULT', {
             round: roundIndex + 1,
             result: roundResult.map(({ speed, performance, ...horse }) => horse),
           })
           resolve(true)
         }
-      }, interval)
+      }, TICK_MS)
     })
   },
 }

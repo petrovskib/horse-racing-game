@@ -61,6 +61,8 @@ export default {
     return {
       roundComplete: false,
       completedRound: 0,
+      badgeTimeoutId: null,
+      animationDelayId: null,
     }
   },
 
@@ -77,17 +79,13 @@ export default {
     currentHorses() {
       return this.$store.getters['race/currentHorses']
     },
-    /*
-      This is the key — pre-calculated result from the store.
-      Contains speed for each horse calculated ONCE in race.js.
-      Animation uses these speeds so visual order matches results.
-    */
     currentRoundResult() {
       return this.$store.getters['race/currentRoundResult']
     },
     schedule() {
       return this.$store.getters['race/schedule']
     },
+
     currentDistance() {
       if (!this.schedule.length || this.currentRound === 0) return 0
       return this.schedule[this.currentRound - 1].distance
@@ -96,6 +94,8 @@ export default {
 
   watch: {
     currentRound(newRound, oldRound) {
+      // Clear any pending timeouts from previous round transition
+      this.clearTimeouts()
       this.stopAnimation()
 
       if (newRound === 0) {
@@ -107,26 +107,28 @@ export default {
       if (oldRound > 0) {
         this.roundComplete = true
         this.completedRound = oldRound
-        setTimeout(() => {
+
+        // Store ID so we can cancel if component unmounts
+        this.badgeTimeoutId = setTimeout(() => {
           this.roundComplete = false
+          this.badgeTimeoutId = null
         }, 1500)
       }
 
-      // New round — reset horses to start line
       this.resetProgress(this.currentHorses)
       this.prepareRound(this.currentRoundResult)
-      setTimeout(() => {
+
+      // Store ID so we can cancel if component unmounts
+      this.animationDelayId = setTimeout(() => {
         this.startAnimation()
+        this.animationDelayId = null
       }, 150)
     },
 
     isRacing(val) {
       if (!val) {
-        // Paused — freeze animation, saves elapsed time internally
         this.stopAnimation()
-      } else {
-        // Resumed — continue from where we left off
-        // DO NOT call resetProgress here — horses keep their position
+      } else if (this.currentRound > 0) {
         this.prepareRound(this.currentRoundResult)
         this.startAnimation()
       }
@@ -134,9 +136,29 @@ export default {
 
     isGenerated(val) {
       if (val) {
+        this.clearTimeouts()
         this.stopAnimation()
         this.resetProgress([])
         this.roundComplete = false
+      }
+    },
+  },
+
+  beforeUnmount() {
+    // Clean up everything when component is destroyed
+    this.clearTimeouts()
+    this.stopAnimation()
+  },
+
+  methods: {
+    clearTimeouts() {
+      if (this.badgeTimeoutId) {
+        clearTimeout(this.badgeTimeoutId)
+        this.badgeTimeoutId = null
+      }
+      if (this.animationDelayId) {
+        clearTimeout(this.animationDelayId)
+        this.animationDelayId = null
       }
     },
   },
@@ -146,15 +168,32 @@ export default {
 <style scoped>
 .race-track {
   flex: 1;
+  min-width: 0;
   background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
+@media (max-width: 768px) {
+  .race-track {
+    width: 100%;
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .race-track__lane {
+    height: 42px; /* slightly shorter lanes on mobile */
+  }
+
+  .race-track__footer {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
 .race-track__empty {
   flex: 1;
   display: flex;

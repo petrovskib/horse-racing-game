@@ -66,17 +66,13 @@ export function selectRandomHorses(horses, count = HORSES_PER_ROUND) {
  *   - speed: normalized 0→1 (winner = 1.0, used by animation)
  */
 export function calculateRaceResult(horses) {
-  // Step 1: assign each horse a performance score
   const withPerformance = horses.map((horse) => ({
     ...horse,
     performance: horse.condition * 0.7 + randomBetween(1, 100) * 0.3,
   }))
 
-  // Step 2: sort by performance descending (best first)
   withPerformance.sort((a, b) => b.performance - a.performance)
 
-  // Step 3: normalize speeds so winner = 1.0
-  // All other horses are proportionally slower
   const maxPerformance = withPerformance[0].performance
 
   return withPerformance.map((horse, index) => ({
